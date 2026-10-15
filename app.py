@@ -18,13 +18,21 @@ st.write("Explore customer purchases, category revenue and monthly sales.")
 import sqlite3
 
 db_path = Path("customer_purchases.db")
+csv_path = Path("customer_purchase_data.csv")
 
 if not db_path.exists():
-    st.error("Database not found! Run python init_db.py first.")
-    st.stop()
+    if not csv_path.exists():
+        st.error("Dataset file not found.")
+        st.stop()
 
-with sqlite3.connect(db_path) as conn:
-    df = pd.read_sql_query("SELECT * FROM purchases", conn)
+    df = pd.read_csv(csv_path)
+
+    with sqlite3.connect(db_path) as conn:
+        df.to_sql("purchases", conn, if_exists="replace", index=False)
+else:
+    with sqlite3.connect(db_path) as conn:
+        df = pd.read_sql_query("SELECT * FROM purchases", conn)
+
 
 # Clean and preprocess
 required_columns = [
@@ -174,7 +182,7 @@ plt.close(fig)
 
 # Transaction table and download
 st.subheader("📋 Transaction Data")
-st.dataframe(filtered, use_container_width=True)
+st.dataframe(filtered, width="stretch")
 
 csv_data = filtered.to_csv(index=False).encode("utf-8")
 
